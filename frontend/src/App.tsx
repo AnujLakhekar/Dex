@@ -1,16 +1,15 @@
-import React from 'react'
-import {OverviewPage, Product} from "./pages"
-import {Sidebar} from "./components"
-import {BrowserRouter, Routes, Route} from "react-router-dom"
-import * as lucide from "lucide-react"
+
+import OverviewPage from "./pages/overview/OverviewPage.tsx" 
+import Product from "./pages/products/products.tsx" 
+import Sidebar from "./components/common/Sidebar.tsx"
+import {Routes, Route} from "react-router-dom"
 
 const App = () => {
-  const [isTrue, setIsTrue] = React.useState(false);
   
 return (
 		<div className='flex h-screen bg-gray-900 text-gray-100 overflow-hidden'>
 			{/* BG */}
-			<Sidebar isTrue={isTrue} />
+			<Sidebar />
 			<main className="w-full flex flex-col">
 			<Routes>
 				<Route path='/' element={<OverviewPage />} />

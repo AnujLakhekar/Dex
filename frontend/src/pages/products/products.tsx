@@ -1,72 +1,86 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Trash, X, Search, Image as ImageIcon, Plus } from "lucide-react";
 import * as lucide from "lucide-react";
-import { useQueryClient,useQuery, useMutation } from "@tanstack/react-query";
+import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
+
+type ProductType = {
+  _id: string;
+  productId: string;
+  name: string;
+  catagory: string;
+  price: number;
+  stock: number;
+  sales: number;
+  imgUrl: string;
+}
+
 
 const Product = () => {
-  const icon = React.useRef();
-  const form = React.useRef();
-  const [src, setSrc] = React.useState(null);
-  const [filteredProducts, setFilteredProducts] = React.useState([]);
-  const [searchTerm, setSearchTerm] = React.useState("");
-  const [isModelOpen, setIsModelOpen] = React.useState(false);
+  const icon = useRef<HTMLInputElement>(null);
+  const form = useRef<HTMLFormElement>(null);
+  const [src, setSrc] = useState<string | null>(null);
+  const [filteredProducts, setFilteredProducts] = useState<ProductType[]>([]);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [isModelOpen, setIsModelOpen] = useState<boolean>(false);
   const queryClient = useQueryClient();
 
-  const { data: overviewData, isPending:isOverviewDataFetching, error:overError } = useQuery({
-queryKey: ["OverviewData"],
-queryFn: async () => {
-const res = await fetch(`${import.meta.env.VITE_BACKNED_URL}/api/me`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({category: 0, users:0, })
-});
+  // Fetch overview data
+  const { data: overviewData, isPending: isOverviewDataFetching, error: overError } = useQuery({
+    queryKey: ["OverviewData"],
+    queryFn: async () => {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/me`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ category: 0, users: 0 }),
+      });
 
-if (!res.ok) throw new Error(res.status);
-  const fetchedData = await res.json();
-  
-  console.log(fetchedData)
- return fetchedData;
- }
- });
+      if (!res.ok) throw new Error(res.statusText.toString());
+      const fetchedData = await res.json();
+      console.log(fetchedData);
+      return fetchedData;
+    },
+  });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (overviewData?.products) {
       setFilteredProducts(overviewData.products);
     }
   }, [overviewData]);
 
   const { mutate: loadData, isPending, error } = useMutation({
-    mutationFn: async (createdFormData) => {
-      
-      console.log(createdFormData)
-      
-      if (!createdFormData.name || !createdFormData.sales || !createdFormData.price ||
-       !createdFormData.imgUrl ||
-       !createdFormData.catagory) {
-      throw new Error("All fields are required")
-      return;
-    }
-      
-      const res = await fetch(`${import.meta.env.VITE_BACKNED_URL}/api/create/product`, {
+    mutationFn: async (createdFormData: { [key: string]: string }) => {
+      if (
+        !createdFormData.name ||
+        !createdFormData.sales ||
+        !createdFormData.price ||
+        !createdFormData.imgUrl ||
+        !createdFormData.catagory
+      ) {
+        throw new Error("All fields are required");
+      }
+
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/create/product`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(createdFormData),
       });
+
       const data = await res.json();
-      
-      setSrc("")
-      
+
+      setSrc(null);
+
       queryClient.invalidateQueries({ queryKey: ["OverviewData"] });
+
       return data;
     },
   });
 
   const { mutate: deleteProduct, isPending: isDeleting } = useMutation({
-    mutationFn: async (id) => {
+    mutationFn: async (id: string) => {
       const res = await fetch(`http://localhost:8000/api/delete/${id}`, {
         method: "POST",
       });
@@ -75,42 +89,41 @@ if (!res.ok) throw new Error(res.status);
       return data;
     },
     onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["OverviewData"] });
+      queryClient.invalidateQueries({ queryKey: ["OverviewData"] });
     },
   });
 
-  function handleChangeIcon(e) {
-    const file = icon.current.files[0];
+  function handleChangeIcon() {
+    const file = icon.current?.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (event) => setSrc(event.target.result);
+      reader.onload = (event) => setSrc(event.target?.result as string);
       reader.readAsDataURL(file);
     }
   }
 
-  function createProducts(e) {
+  function createProducts(e: React.FormEvent) {
     e.preventDefault();
     const oldForm = form.current;
-    const newForm = new FormData(oldForm);
+    const newForm = new FormData(oldForm as HTMLFormElement);
 
-    let createdFormData = {};
+    let createdFormData: { [key: string]: string } = {};
     for (let [key, value] of newForm.entries()) {
-      createdFormData[key] = value;
+      createdFormData[key] = value as string;
     }
-
 
     createdFormData["imgUrl"] = src || "";
 
     loadData(createdFormData);
   }
 
-  function handleSearch(e) {
+  function handleSearch(e: React.ChangeEvent<HTMLInputElement>) {
     const term = e.target.value.toLowerCase();
     setSearchTerm(term);
+    console.log(searchTerm)
     const filtered = overviewData.products.filter(
-      (product) =>
-        product.name.toLowerCase().includes(term) ||
-        product.catagory?.toLowerCase().includes(term) 
+      (product: ProductType) =>
+        product.name.toLowerCase().includes(term) || product.catagory?.toLowerCase().includes(term)
     );
     setFilteredProducts(filtered);
   }
@@ -135,7 +148,10 @@ if (!res.ok) throw new Error(res.status);
             <thead>
               <tr>
                 {["Name", "Category", "Price", "Stock", "Sales", "Actions"].map((header) => (
-                  <th key={header} className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  <th
+                    key={header}
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
+                  >
                     {header}
                   </th>
                 ))}
@@ -143,25 +159,37 @@ if (!res.ok) throw new Error(res.status);
             </thead>
             <tbody className="divide-y divide-gray-700">
               {filteredProducts?.length ? (
-        filteredProducts.map((product) => (
-          <tr key={product._id}>
-        <td className="flex gap-2 px-6 py-4 text-sm text-gray-300 overflow-hidden"><img className="w-[24px] h-[24px] rounded-full"
-                    src={product.imgUrl} />{product.name}</td>
+                filteredProducts.map((product) => (
+                  <tr key={product._id}>
+                    <td className="flex gap-2 px-6 py-4 text-sm text-gray-300 overflow-hidden">
+                      <img className="w-[24px] h-[24px] rounded-full" src={product.imgUrl} />
+                      {product.name}
+                    </td>
                     <td className="px-6 py-4 text-sm text-gray-300">{product.catagory || "—"}</td>
                     <td className="px-6 py-4 text-sm text-gray-300">₹{product.price || "0"}</td>
                     <td className="px-6 py-4 text-sm text-gray-300">{product.stock}</td>
                     <td className="px-6 py-4 text-sm text-gray-300">{product.sales || "0"}</td>
                     <td className="px-6 py-4 text-sm font-medium text-gray-300">
                       <button onClick={() => deleteProduct(product.productId)} className="hover:text-red-500">
-                      {isDeleting ? (<lucide.LoaderPinwheel className="animate-spin" color="purple" />) :  (<Trash size={16} />)}
+                        {isDeleting ? (
+                          <lucide.LoaderPinwheel className="animate-spin" color="purple" />
+                        ) : (
+                          <Trash size={16} />
+                        )}
                       </button>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="flex w-full h-full justify-center items-center text-center gap-2.5 text-gray-400 py-6">
-                  {isOverviewDataFetching ? (<lucide.LoaderPinwheel className="animate-spin" color="purple" />) : (<><lucide.FileQuestion size={24} color="skyblue" /> No file Found</>)}
+                  <td colSpan={6} className="flex w-full h-full justify-center items-center text-center gap-2.5 text-gray-400 py-6">
+                    {isOverviewDataFetching ? (
+                      <lucide.LoaderPinwheel className="animate-spin" color="purple" />
+                    ) : (
+                      <>
+                        <lucide.FileQuestion size={24} color="skyblue" /> No file Found
+                      </>
+                    )}
                   </td>
                 </tr>
               )}
@@ -187,41 +215,19 @@ if (!res.ok) throw new Error(res.status);
             </div>
             <form ref={form} onSubmit={createProducts}>
               {[
-                {name: "name",
-                type: "text",
-                Icon: ImageIcon,
-                },
-                {name: "sales",
-                type: "number",
-                Icon: ImageIcon,
-                },        
-                {name: "stock",
-                type: "number",
-                Icon: ImageIcon,
-                },              
-                {name: "catagory",
-                type: "text",
-                Icon: ImageIcon,
-                },               
-                {name: "price",
-                type: "number",
-                Icon: ImageIcon,
-                }].map((field) => (
-                <div
-                  key={field.name}
-                  className="flex items-center gap-2.5 bg-gray-700 p-2 mb-2 rounded-lg border-2 border-transparent hover:border-indigo-600"
-                >
+                { name: "name", type: "text", Icon: ImageIcon },
+                { name: "sales", type: "number", Icon: ImageIcon },
+                { name: "stock", type: "number", Icon: ImageIcon },
+                { name: "catagory", type: "text", Icon: ImageIcon },
+                { name: "price", type: "number", Icon: ImageIcon },
+              ].map((field) => (
+                <div key={field.name} className="flex items-center gap-2.5 bg-gray-700 p-2 mb-2 rounded-lg border-2 border-transparent hover:border-indigo-600">
                   <field.Icon />
-                  <input
-                    name={field.name}
-                    placeholder={field.name}
-                    type={field.type}
-                    className="bg-gray-700 text-white outline-none w-full"
-                  />
+                  <input name={field.name} placeholder={field.name} type={field.type} className="bg-gray-700 text-white outline-none w-full" />
                 </div>
               ))}
 
-              <div className="h-[180px] mt-5 flex justify-center items-center bg-gray-700 p-2 rounded-lg border-2  border-gray-400 hover:border-indigo-600">
+              <div className="h-[180px] mt-5 flex justify-center items-center bg-gray-700 p-2 rounded-lg border-2 border-gray-400 hover:border-indigo-600">
                 <input ref={icon} type="file" className="hidden" onChange={handleChangeIcon} />
                 {src ? (
                   <div className="relative group">
@@ -235,7 +241,7 @@ if (!res.ok) throw new Error(res.status);
                     </button>
                   </div>
                 ) : (
-                  <button className="flex font-bold text-gray-400" type="button" onClick={() => icon.current.click()}>
+                  <button className="flex font-bold text-gray-400" type="button" onClick={() => icon.current?.click()}>
                     <Plus /> Upload Image
                   </button>
                 )}
@@ -252,11 +258,10 @@ if (!res.ok) throw new Error(res.status);
           </div>
         </div>
       )}
-      
+
       <div>
-       <p className="text-red-500">{overError ? overError.error : ""}</p>
+        <p className="text-red-500">{overError ? overError.message : ""}</p>
       </div>
-      
     </>
   );
 };
