@@ -66,7 +66,7 @@ const OverviewPage = () => {
 <StateCard name="Users" icon={lucide.Users} value={overviewData?.users ?? 0} color="#8B5CF6" />
 <StateCard name="Total Products" icon={lucide.ShoppingBag} value={overviewData?.products.length ?? 0} color="#EC4899" />
 <StateCard name="Stock" icon={lucide.BarChart2} value={overviewData?.stock ?? 0} color="#10B981" />
-<StateCard name="Stock" icon={lucide.Zap} value={overviewData?.sales ?? 0} color="#10B981" />
+<StateCard name="sales" icon={lucide.Zap} value={overviewData?.sales ?? 0} color="#10B981" />
 
           </motion.div>
 
