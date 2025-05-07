@@ -5,10 +5,10 @@ import {v2 as cloudinary} from "cloudinary"
 import cors from "cors"
 import {config} from "dotenv"
 
-const App = express()
+const App = express();
 config()
 App.use(cors({
-        origin: "https://dex-qjoe.onrender.com/"
+        origin: "https://dex-qjoe.onrender.com"
 }));
 App.use(express.json({ limit: "10mb" }));
 App.use(express.urlencoded({ extended: true }))
