@@ -28,7 +28,7 @@ const Product = () => {
   const { data: overviewData, isPending: isOverviewDataFetching, error: overError } = useQuery({
     queryKey: ["OverviewData"],
     queryFn: async () => {
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/me`, {
+      const res = await fetch(`https://dexbackend-rvli.onrender.com/api/me`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -61,7 +61,7 @@ const Product = () => {
         throw new Error("All fields are required");
       }
 
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/create/product`, {
+      const res = await fetch(`https://dexbackend-rvli.onrender.com/api/create/product`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -81,7 +81,7 @@ const Product = () => {
 
   const { mutate: deleteProduct, isPending: isDeleting } = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`http://localhost:8000/api/delete/${id}`, {
+      const res = await fetch(`https://dexbackend-rvli.onrender.com/api/delete/${id}`, {
         method: "POST",
       });
       queryClient.invalidateQueries({ queryKey: ["OverviewData"] });

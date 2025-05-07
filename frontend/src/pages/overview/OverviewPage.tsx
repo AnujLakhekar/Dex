@@ -18,7 +18,7 @@ const OverviewPage = () => {
   const { data: overviewData, isLoading, error } = useQuery<OverviewData>({
     queryKey: ["OverviewData"],
     queryFn: async () => {
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/me`, {
+      const res = await fetch(`https://dexbackend-rvli.onrender.com/api/me`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
